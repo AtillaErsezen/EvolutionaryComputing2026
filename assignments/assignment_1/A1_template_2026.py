@@ -258,14 +258,12 @@ def fitness_function(
 ) -> float:
     """Score one body against the whole target set. LOWER IS BETTER.
 
-    Some things worth thinking about (and, ideally, comparing in the report):
-      * The std term charges for unevenness, but the weighting (1.0, fixed) is
-        still just one choice. A body that is mediocre against every target
+    Some things worth thinking about:
+      * The std term charges for unevenness - body that is mediocre against every target
         and one that is excellent on most but bad on one can still land close
-        in fitness -- is that the tradeoff you want?
+        in fitness, but the latter is penalized a bit more.
       * Nothing here rewards small bodies. Does your EA bloat? Should a size
         penalty be part of fitness, or is that the encoding's job?
-      * The distance is symmetric, but the task is not: you are chasing them.
     """
     return mean_plus_std_tree_edit_distance(body, targets)
 
