@@ -8,7 +8,7 @@ from rich.traceback import install
 from ariel.ec import (
     EA,
     Crossover,
-    EAStep,
+    EAOperation,
     Individual,
     IntegerMutator,
     IntegersGenerator,
@@ -63,12 +63,13 @@ def crossover(population: Population) -> Population:
             cast("list[int]", p_b.genotype),
         )
 
+        # one_point returns float genotypes; keep this encoding integer.
         child_a = Individual()
-        child_a.genotype = g_a
+        child_a.genotype = [int(gene) for gene in g_a]
         child_a.tags = {"mutate": True}
 
         child_b = Individual()
-        child_b.genotype = g_b
+        child_b.genotype = [int(gene) for gene in g_b]
         child_b.tags = {"mutate": True}
 
         population.extend([child_a, child_b])
@@ -105,28 +106,31 @@ def survivor_selection(population: Population) -> Population:
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main() -> None:
+    # survivor_selection culls down to this; keep it in line with the seed size.
+    config.target_population_size = 20
+
     initial = Population([make_individual() for _ in range(20)])
     initial = evaluate(initial)
 
-    ops: list[EAStep] = [
-        EAStep("parent_selection", parent_selection),
-        EAStep("crossover", crossover),
-        EAStep("mutate", mutate),
-        EAStep("evaluate", evaluate),
-        EAStep("survivor_select", survivor_selection),
+    ops: list[EAOperation] = [
+        EAOperation(parent_selection),
+        EAOperation(crossover),
+        EAOperation(mutate),
+        EAOperation(evaluate),
+        EAOperation(survivor_selection),
     ]
 
     ea = EA(initial, ops, num_steps=50)
     ea.run()
 
-    console.log("─── Results ───")
-    console.log(f"best = {ea.best('best', only_alive=False)}")
-    console.log(f"median = {ea.best('median', only_alive=False)}")
-    console.log(f"worst = {ea.best('worst', only_alive=False)}")
+    console.log("--- Results ---")
+    console.log(f"best = {ea.get_solution('best', only_alive=False)}")
+    console.log(f"median = {ea.get_solution('median', only_alive=False)}")
+    console.log(f"worst = {ea.get_solution('worst', only_alive=False)}")
 
     # Population API examples
     db_pop = ea._fetch(only_alive=False)
-    top_10 = db_pop.best(sort="max", attribute="fitness", n=10)
+    top_10 = db_pop.best(sort="max", attribute="fitness_", n=10)
     console.log(f"top-10 from DB = {top_10}")
 
     sampled_best = db_pop.sample(30).best(sort="max", attribute="fitness_", n=5)

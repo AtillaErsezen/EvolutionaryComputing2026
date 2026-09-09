@@ -15,9 +15,11 @@ from ariel import console
 from ariel.body_phenotypes.robogen_lite.constructor import (
     construct_mjspec_from_graph,
 )
+from ariel.body_phenotypes.robogen_lite.decoders._blueprint import (
+    save_graph_as_json,
+)
 from ariel.body_phenotypes.robogen_lite.decoders.hi_prob_decoding import (
     HighProbabilityDecoder,
-    save_graph_as_json,
 )
 from ariel.ec.genotypes.nde import NeuralDevelopmentalEncoding
 from ariel.simulation.controllers.controller import Controller

@@ -22,10 +22,12 @@ from ariel.body_phenotypes.robogen_lite.config import (
     NUM_OF_ROTATIONS,
     NUM_OF_TYPES_OF_MODULES,
 )
-from ariel.body_phenotypes.robogen_lite.decoders.hi_prob_decoding import (
-    HighProbabilityDecoder,
+from ariel.body_phenotypes.robogen_lite.decoders._blueprint import (
     draw_graph,
     save_graph_as_json,
+)
+from ariel.body_phenotypes.robogen_lite.decoders.hi_prob_decoding import (
+    HighProbabilityDecoder,
 )
 
 # Type Checking
