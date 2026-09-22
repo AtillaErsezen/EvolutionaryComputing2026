@@ -43,7 +43,15 @@ from ariel.simulation.environments import SimpleFlatWorld
 from ariel.utils.renderers import single_frame_renderer, video_renderer
 from ariel.utils.runners import simple_runner
 from ariel.utils.video_recorder import VideoRecorder
-
+from ariel.ec import (
+    EA,
+    Crossover,
+    EAOperation,
+    Individual,
+    FloatMutator,
+    Population,
+    config,
+)
 # Type aliases
 type ViewerTypes = Literal["launcher", "video", "simple", "frame", "no_control"]
 
@@ -192,6 +200,13 @@ def make_random_weights(
     ]
 
 
+def make_individual() -> Individual:
+    ind = Individual()
+    weights = make_random_weights(input_size=10, output_size=6)
+    # genotype_ is a JSON column, so it must be plain Python types, not
+    # ndarrays - store the flat, concatenated weights instead.
+    ind.genotype = np.concatenate([w.ravel() for w in weights]).tolist()
+    return ind
 # ============================================================================ #
 #  3. POSITION AND FITNESS
 # ============================================================================ #
@@ -229,11 +244,39 @@ def fitness_function(
     target = np.asarray(TARGET_POSITION)
     return float(np.linalg.norm(final_position[:2] - target[:2]))
 
+def parent_selection(population: Population) -> Population:
+    # Implement your parent selection logic here
+    # For example, you can use tournament selection, roulette wheel selection, etc.
+    # This is a placeholder implementation that selects the top 50% of individuals based on fitness
+    sorted_population = sorted(population, key=lambda ind: ind.fitness)
+    num_parents = len(sorted_population) // 2
+    return Population(sorted_population[:num_parents])
 
+def crossover(parents: Population) -> Population:
+    # Implement your crossover logic here
+    # This is a placeholder implementation that performs single-point crossover
+    return parents
+
+def mutate(population: Population) -> Population:
+    # Implement your mutation logic here
+    # This is a placeholder implementation 
+    return population
+
+def survivor_selection(population: Population) -> Population:
+    # Implement your survivor selection logic here
+    # This is a placeholder implementation that selects the top 50% of individuals based on fitness
+    sorted_population = sorted(population, key=lambda ind: ind.fitness)
+    num_survivors = len(sorted_population) // 2
+    return Population(sorted_population[:num_survivors]) 
 # ============================================================================ #
 #  4. RUNNING ONE EVALUATION
 # ============================================================================ #
+def evaluate(population: Population) -> Population:
+    # Evaluate each individual in the population
+    for individual in population:
+        individual.fitness = run_experiment()
 
+    return population
 
 def run_experiment(mode: ViewerTypes = MODE) -> float:
     """Set up the world, run one simulation, and return the fitness.
@@ -358,9 +401,27 @@ def main() -> None:
     console.log(f"controller outputs (model.nu)      : {output_size}")
     console.log(f"genotype length (total weights)    : {num_weights}")
 
-    run_experiment(MODE)
+    #initial values for simulation, change later
+    config.target_population_size = 1 
+    config.num_steps = 1
+    initial = Population([make_individual() for _ in range(config.target_population_size)])
+    initial: Population = evaluate(initial)
 
-
+    ops: list[EAOperation] = [
+        EAOperation(parent_selection),
+        EAOperation(crossover),
+        EAOperation(mutate),
+        EAOperation(evaluate),
+        EAOperation(survivor_selection),
+    ]
+    ea = EA(
+        initial,
+        ops,
+        num_steps=config.num_steps,
+        is_maximisation=False,
+        db_file_path=DATA / f"seed{SEED}.db",
+    )
+    ea.run()
 if __name__ == "__main__":
     main()
 
